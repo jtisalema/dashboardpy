@@ -1,7 +1,28 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+st.markdown("""
+<div style="text-align: center;">
+  <img src="https://www.uide.edu.ec/wp-content/uploads/2025/06/logo-uide.webp" width="150" style="display: block; margin: 0 auto;">
+  <h1>Maestría en Ciencia de Datos</h1>
+  <hr>
+  <h2>Trabajo Práctico - Clase 3</h2>
+  <h3>Semana: W3 - Componente Práctico 3</h3>
+  <h3>Equipo: G8</h3>
+  <p><b>Fecha:</b> 05 Mayo 2026</p>
+</div>
 
+<br>
+
+<b>Integrantes:</b>
+<ul>
+<li>JONATHAN FERNANDO TISALEMA LASCANO</li>
+<li>JHAIR JOSUE ALARCON QUINTEROS</li>
+<li>ADRIAN OLIDER CAICEDO SANTOS</li>
+</ul>
+""", unsafe_allow_html=True)
+
+st.divider()
 # Configuración de página
 st.set_page_config(
     page_title="Dashboard Hospitalario",
