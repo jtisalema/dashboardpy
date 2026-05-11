@@ -22,7 +22,7 @@ st.markdown("""
   <h2>Trabajo Práctico - Clase 3</h2>
   <h3>Semana: W3 - Componente Práctico 3</h3>
   <h3>Equipo: G8</h3>
-  <p><b>Fecha:</b> 05 Mayo 2026</p>
+  <p><b>Fecha:</b> 10 Mayo 2026</p>
 </div>
 
 <br>
