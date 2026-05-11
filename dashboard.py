@@ -1,6 +1,19 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+
+# =========================================================
+# CAMBIO:
+# st.set_page_config() debe ir antes de cualquier elemento Streamlit
+# =========================================================
+st.set_page_config(
+    page_title="Dashboard Hospitalario",
+    layout="wide"
+)
+
+# =========================================================
+# PORTADA
+# =========================================================
 st.markdown("""
 <div style="text-align: center;">
   <img src="https://www.uide.edu.ec/wp-content/uploads/2025/06/logo-uide.webp" width="150" style="display: block; margin: 0 auto;">
@@ -23,18 +36,20 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.divider()
-# Configuración de página
-st.set_page_config(
-    page_title="Dashboard Hospitalario",
-    layout="wide"
-)
 
+# =========================================================
+# TÍTULO PRINCIPAL
+# =========================================================
 st.title("Dashboard de Atenciones Hospitalarias")
 
-# Cargar datos
+# =========================================================
+# CARGA DE DATOS
+# =========================================================
 df = pd.read_csv("clinical_analytics.csv")
 
-# Convertir fechas
+# =========================================================
+# CONVERSIÓN DE FECHAS
+# =========================================================
 df["Appt Start Time"] = pd.to_datetime(
     df["Appt Start Time"],
     format="%Y-%m-%d %I:%M:%S %p",
@@ -46,48 +61,104 @@ df["Check-In Time"] = pd.to_datetime(
     format="%Y-%m-%d %I:%M:%S %p",
     errors="coerce"
 )
-df["Discharge Datetime new"] = pd.to_datetime(df["Discharge Datetime new"], errors="coerce")
 
-# Limpieza básica
+df["Discharge Datetime new"] = pd.to_datetime(
+    df["Discharge Datetime new"],
+    errors="coerce"
+)
+
+# =========================================================
+# LIMPIEZA BÁSICA
+# =========================================================
 df["Diagnosis Primary"] = df["Diagnosis Primary"].fillna("Sin diagnóstico")
 df["Encounter Status"] = df["Encounter Status"].fillna("Sin estado")
 df["Department"] = df["Department"].fillna("Sin departamento")
+df["Clinic Name"] = df["Clinic Name"].fillna("Sin clínica")
 
-# Sidebar con filtros
+# =========================================================
+# SIDEBAR - FILTROS
+# =========================================================
 st.sidebar.header("Filtros")
 
+# =========================================================
+# FILTRO 1 - DEPARTAMENTO
+# =========================================================
 departamentos = st.sidebar.multiselect(
     "Departamento",
     options=sorted(df["Department"].dropna().unique()),
     default=sorted(df["Department"].dropna().unique())
 )
 
+# =========================================================
+# FILTRO 2 - ESTADO
+# =========================================================
 estado = st.sidebar.multiselect(
     "Estado",
     options=sorted(df["Encounter Status"].dropna().unique()),
     default=sorted(df["Encounter Status"].dropna().unique())
 )
 
-# Aplicar filtros
+# =========================================================
+# CAMBIO:
+# FILTRO 3 AGREGADO - CLÍNICA
+# =========================================================
+clinica = st.sidebar.multiselect(
+    "Clínica",
+    options=sorted(df["Clinic Name"].dropna().unique()),
+    default=sorted(df["Clinic Name"].dropna().unique())
+)
+
+# =========================================================
+# APLICAR FILTROS
+# =========================================================
 df_filtrado = df[
     (df["Department"].isin(departamentos)) &
-    (df["Encounter Status"].isin(estado))
-]
+    (df["Encounter Status"].isin(estado)) &
+    (df["Clinic Name"].isin(clinica))
+].copy()
 
-# Métricas principales
+# =========================================================
+# MÉTRICAS PRINCIPALES
+# =========================================================
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("Total de registros", len(df_filtrado))
-col2.metric("Tiempo promedio de espera", round(df_filtrado["Wait Time Min"].mean(), 2))
-col3.metric("Care Score promedio", round(df_filtrado["Care Score"].mean(), 2))
-col4.metric("Pacientes únicos", df_filtrado["Encounter Number"].nunique())
+# =========================================================
+# CAMBIO:
+# Se agrega unidad de tiempo "min"
+# =========================================================
+col1.metric(
+    "Total de registros",
+    len(df_filtrado)
+)
+
+col2.metric(
+    "Tiempo promedio de espera",
+    f"{round(df_filtrado['Wait Time Min'].mean(), 2)} min"
+)
+
+# =========================================================
+# CAMBIO:
+# Se agrega escala máxima del Care Score (/5)
+# =========================================================
+col3.metric(
+    "Care Score promedio",
+    f"{round(df_filtrado['Care Score'].mean(), 2)}/5"
+)
+
+col4.metric(
+    "Pacientes únicos",
+    df_filtrado["Encounter Number"].nunique()
+)
 
 st.divider()
 
-# Gráficas
+# =========================================================
+# GRÁFICAS
+# =========================================================
 col5, col6 = st.columns(2)
 
 with col5:
+
     st.subheader("Tiempo promedio de espera por departamento")
 
     espera_depto = (
@@ -104,9 +175,19 @@ with col5:
         title="Wait Time promedio por departamento"
     )
 
+    # =========================================================
+    # CAMBIO:
+    # Se agrega unidad de tiempo en eje Y
+    # =========================================================
+    fig1.update_layout(
+        yaxis_title="Tiempo de espera (minutos)",
+        xaxis_title="Departamento"
+    )
+
     st.plotly_chart(fig1, width="stretch")
 
 with col6:
+
     st.subheader("Cantidad de registros por estado")
 
     estado_count = (
@@ -125,9 +206,13 @@ with col6:
 
     st.plotly_chart(fig2, width="stretch")
 
+# =========================================================
+# SEGUNDA FILA DE GRÁFICAS
+# =========================================================
 col7, col8 = st.columns(2)
 
 with col7:
+
     st.subheader("Care Score por departamento")
 
     fig3 = px.box(
@@ -137,12 +222,30 @@ with col7:
         title="Distribución del Care Score"
     )
 
+    # =========================================================
+    # CAMBIO:
+    # Se agrega título descriptivo eje Y
+    # =========================================================
+    fig3.update_layout(
+        yaxis_title="Care Score (escala 1-5)",
+        xaxis_title="Departamento"
+    )
+
     st.plotly_chart(fig3, width="stretch")
 
 with col8:
+
     st.subheader("Registros por mes")
 
-    df_filtrado["Mes"] = df_filtrado["Appt Start Time"].dt.to_period("M").astype(str)
+    # =========================================================
+    # CAMBIO:
+    # Uso de .copy() previamente para evitar warning
+    # =========================================================
+    df_filtrado["Mes"] = (
+        df_filtrado["Appt Start Time"]
+        .dt.to_period("M")
+        .astype(str)
+    )
 
     registros_mes = (
         df_filtrado
@@ -158,10 +261,21 @@ with col8:
         title="Evolución mensual de registros"
     )
 
+    fig4.update_layout(
+        xaxis_title="Mes",
+        yaxis_title="Cantidad de registros"
+    )
+
     st.plotly_chart(fig4, width="stretch")
 
 st.divider()
 
-# Tabla final
+# =========================================================
+# TABLA FINAL
+# =========================================================
 st.subheader("Datos filtrados")
-st.dataframe(df_filtrado, width="stretch")
+
+st.dataframe(
+    df_filtrado,
+    width="stretch"
+)
